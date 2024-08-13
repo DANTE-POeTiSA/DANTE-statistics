@@ -1,0 +1,237 @@
+---
+title: |
+  | Distribuição de Etiquetas PoS no DANTEShots
+  | -- Estatísticas --
+
+# lang funciona apenas no pdf
+lang: "pt-br"
+
+#Coloca os arquivos de output d knit num diretório separado
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_dir = "pdf") })
+
+# gera só pdf
+output:
+  pdf_document:
+    citation_package: natbib
+    keep_tex: true
+    fig_caption: true
+    latex_engine: pdflatex
+    number_sections: yes
+    # toc: true # table of content true
+    # toc_depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    #number_sections: true  ## if you want number sections at each table header
+    #theme: united  # many options for theme, this one is my favorite.
+    #highlight: tango  # specifies the syntax highlighting style
+
+# definições para o LaTeX
+fontsize: 11pt
+geometry: margin=1in
+documentclass: article
+# documentclass: report
+
+# headers LaTeX
+header-includes:
+    - \usepackage{float} # para o H em LaTeX
+    # - \floatplacement{figure}{H}
+  # html_notebook: default
+  # html_document:
+  #   df_print: paged
+urlcolor: blue # cor do link no pdf
+# ver https://bookdown.org/yihui/rmarkdown/pdf-document.html (3.3.5, como integrar classe latex)
+---
+
+```{r, setup, include=FALSE}
+# diretório de trabalho
+
+
+# necessária para o include_graphics
+library(knitr)		# para formatar o markdown (tabelas)
+library(tidyverse)	# para manipulação de dados e gráficos
+library(kableExtra)	# para o kable_styling
+# library(png)		# para imagens em png nos gráficos. Fornece readPNG()
+#library(jpeg) - fornece a readJPG()
+# library(grid)		# para a rasterGrob
+
+# opções globais para os chunks (ver https://yihui.org/knitr/options/)
+knitr::opts_chunk$set(
+  fig.align='center',# alinhamento das figuras
+  echo = FALSE,# código não será mostrado por padrão
+  fig.width = 9,# tamanho das figuras em todos os gráficos
+  fig.height = 4.5,
+  fig.align='center',# alinhamento das figuras
+  out.width = '70%',# reduz proporcionalmente (mantendo o aspect ratio de height e width)
+  cache = FALSE,# para deixar mais rápido deixar TRUE, mas ele cria uma pasta
+  warning = FALSE,# desliga avisos
+  message = FALSE,# desliga mensagens
+  fig.pos = "H",# O H do float do LaTeX
+  tab.pos = "H"# O H do float do LaTeX
+  # error=T faz com que não pare com erros
+)
+
+# evita notação científica no texto
+options(scipen=999)
+
+```
+
+# Dados Gerais do Corpus
+
+```{r}
+# base de dados com rótulo de cada token
+dadosBrutos <- read.csv("tables/final_table.csv")
+
+# frequencias
+freqGeral <- dadosBrutos %>%
+  group_by(POS) %>%
+  summarize(freq=n())
+
+# frequência absoluta de cada etiqueta em cada tweet
+freqTweet <- dadosBrutos %>%
+  group_by(ID_DSHOTS, POS) %>%
+  summarise(freq = n())
+
+# total de etiquetas por tweet (casa com o número de tokens do tweet)
+etiqTweet <- dadosBrutos %>% group_by(ID_DSHOTS) %>% summarize(freq=n())
+
+# total de etiquetas distintas por tweet
+etiqDistTweet <- freqTweet %>% group_by(ID_DSHOTS) %>% summarize(freq=n())
+# freqTweet %>% group_by(ID_DSTOCKS) %>% summarize(freq=sum(freq)) equivale a etiqTweet
+
+```
+
+-   Quantidade de tweets: `r nrow(etiqTweet)`
+
+-   Total de etiquetas no corpus: `r sum(etiqTweet$freq)`
+
+-   Número mínimo de etiquetas em um tweet: `r min(etiqTweet$freq)`
+
+-   Número máximo de etiquetas em um tweet: `r max(etiqTweet$freq)`
+
+-   Número máximo de etiquetas distintas em um tweet: `r max(etiqDistTweet$freq)` 
+
+# Distribuição Geral das Etiquetas PoS
+
+Frequência absoluta de etiquetas, e sua distribuição, no corpus como um todo:
+
+```{r}
+# histograma geral
+ggplot(data = freqGeral, mapping = aes(x = reorder(POS, -freq), y = freq)) +
+  geom_col() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(aes(label = freq), vjust = -0.5, size=3) +
+  labs(x = "PoS Tag", y = "Number of Tags")
+  # coord_flip()
+```
+Frequência relativa de etiquetas, e sua distribuição, no corpus como um todo:
+
+```{r}
+# histograma geral (frequência)
+
+relative_freq <- (freqGeral$freq / sum(freqGeral$freq)) * 100
+
+ggplot(data = freqGeral, mapping = aes(x = reorder(POS, -relative_freq), y = relative_freq)) +
+  geom_col() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(aes(label = sprintf("%.2f%%", relative_freq)), vjust = -0.5, size=3) +
+  labs(x = "PoS Tag", y = "Relative Frequency (%)")
+
+```
+
+## Qual a etiqueta mais frequente?
+
+```{r}
+freqDecr <- freqGeral[order(freqGeral$freq, decreasing = T),]
+```
+
+A etiqueta mais frequente é `r freqDecr$POS[1]` (com `r freqDecr$freq[1]` tags no corpus), seguida de `r freqDecr$POS[2]` (`r freqDecr$freq[2]` tags no corpus) e `r freqDecr$POS[3]` (`r freqDecr$freq[3]` tags no corpus).
+
+## Qual a etiqueta menos frequente?
+
+No outro extremo, temos `r tail(freqDecr,1)$POS` como a etiqueta menos frequente (com `r tail(freqDecr,1)$freq` tags no corpus), seguida de `r tail(freqDecr,2)$POS[1]` (`r tail(freqDecr,2)$freq[1]` tags no corpus) e `r tail(freqDecr,3)$POS[1]` (`r tail(freqDecr,3)$freq[1]` tags no corpus).
+
+## Quantas etiquetas diferentes há no corpus?
+
+Das 17 etiquetas possíveis na UD v2 (<https://universaldependencies.org/v2/postags.html>), um total de `r nrow(freqDecr)` aparecem no corpus. Estas são (em ordem decrescente de frequência no corpus): `r freqDecr$POS`.
+
+# Distribuição de Etiquetas Conforme sua Frequência em Tweets em que Ocorrem
+
+O gráfico abaixo ilustra o número mínimo, máximo, bem como quartis, de vezes que cada etiqueta ocorre por tweet, considerando apenas os tweets em que ela ocorre:
+
+```{r, fig.width = 7, fig.height = 5.5}
+boxes <- ggplot(data = freqTweet, mapping = aes(x = POS, y = freq)) +
+  geom_boxplot() +
+  labs(x = "PoS Tag", y = "Number of Tags") +
+  coord_flip()
+
+tabelaBoxes <- layer_data(boxes)[c(1:5)]
+
+boxes
+```
+
+Note que, em `r sum(tabelaBoxes$ymin == tabelaBoxes$middle)` etiquetas (das `r nrow(tabelaBoxes)`), a mediana iguala o valor mínimo, indicando que 50% dos dados correspondem a esse valor, e que em `r sum(!(tabelaBoxes$lower == tabelaBoxes$middle))` a mediana se afasta da base do corpo da caixa. Também é notória a presença de outliers apenas na parte superior do intervalo (acima de 1.5 $\times$ IQR -- inter-quartile range -- da borda), tudo isso indicando uma concentração das frequências dos tags nos valores mais baixos.
+
+```{r}
+identify_outliers <- function(x) {
+  q1 <- quantile(x, 0.25)
+  q3 <- quantile(x, 0.75)
+  iqr <- q3 - q1
+  lower_bound <- q1 - 1.5 * iqr
+  upper_bound <- q3 + 1.5 * iqr
+  x[x < lower_bound | x > upper_bound]
+}
+
+outliers <- identify_outliers(freqTweet$freq)
+
+if (length(outliers) > 0) {
+  highest_outlier <- max(outliers)
+
+  index_of_highest_outlier <- which(freqTweet$freq == highest_outlier)
+}
+```
+Podemos observar que existe um tweet cuja quantidade de pontuações está muito além da quantidade encontrada nos demais, o tweet em questão possui o índice `r freqTweet[index_of_highest_outlier, ]$ID_DSHOTS`. E o seu conteúdo é mostrado abaixo:
+
+"Vacinam adolescentes:\\n\\nEUA????Canadá????Chile????Uruguai????Áustria????Itália????Suiça????Alem????Israel????
+França????Espanha????Inglaterra??????????????Irlanda????Escócia??????????????Lituânia????China????Singapura????
+Filipina????Romênia????Portugal????Israel????Catar????Japão????Polônia????Hungria????Noruega????Bélgica????
+Argentina????Índia????"
+
+# Abrangência de cada etiqueta
+
+A distribuição das etiquetas, conforme o número de tweets em que ocorrem, é:
+
+```{r}
+# número de tweets diferentes em que cada etiqueta ocorre
+distrTweet <- data.frame(PoS = c("NUM","NOUN","PUNCT","ADP","ADJ",
+                                 "ADV","X","INTJ","PROPN","SYM",
+                                 "VERB","DET","CCONJ","AUX","PRON",
+                                 "SCONJ","PART"),
+                         tweets = c(3318,6950,6917,6817,5414,5366,
+                                    1909,359,6028,3638,6721,6773,
+                                    4664,4904,4066,2356,0))
+
+# Abrangência de cada tag em relação ao total de tweets (frequência de ococrrência)
+distrTweet$freq <- distrTweet$tweets / nrow(etiqTweet)
+
+ggplot(data = distrTweet, mapping = aes(x = reorder(PoS, -tweets), y = tweets)) +
+  geom_col() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(aes(label = tweets), vjust = -0.5, size=3) +
+  labs(x = "PoS Tag", y = "Number of Tweets")
+
+# distrTweet[order(distrTweet$freq, decreasing = T),]
+```
+
+Note que:
+
+-   Das 17 tags, `r nrow(distrTweet[distrTweet$freq > 0.5,])` ocorrem em mais de 50% dos tweets (**i.e.** mais de `r nrow(etiqTweet)/2` tweets)
+
+-   As 4 tags mais abrangentes, em número de tweets em que ocorrem, também são as mais comuns, em número de vezes em que ocorrem no corpus, embora a ordem mude.
+
+------------------------------------------------------------------------
+
+```{r}
+# freqTag <- filter(freqTweet, POS == "ADP")
+# 
+# ggplot(data = freqTag, mapping = aes(x = freqTag$freq)) +
+#   geom_histogram(binwidth = 0.5)
+```

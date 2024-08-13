@@ -1,0 +1,969 @@
+---
+title: |
+  | Comparação entre a Distribuição de Etiquetas PoS
+  | -- Estatísticas --
+
+# lang funciona apenas no pdf
+lang: "pt-br"
+
+#Coloca os arquivos de output d knit num diretório separado
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_dir = "pdf") })
+
+# gera só pdf
+output:
+  pdf_document:
+    citation_package: natbib
+    keep_tex: true
+    fig_caption: true
+    latex_engine: pdflatex
+    number_sections: yes
+    # toc: true # table of content true
+    # toc_depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    #number_sections: true  ## if you want number sections at each table header
+    #theme: united  # many options for theme, this one is my favorite.
+    #highlight: tango  # specifies the syntax highlighting style
+
+# definições para o LaTeX
+fontsize: 11pt
+geometry: margin=1in
+documentclass: article
+# documentclass: report
+
+# headers LaTeX
+header-includes:
+    - \usepackage{float} # para o H em LaTeX
+    # - \floatplacement{figure}{H}
+  # html_notebook: default
+  # html_document:
+  #   df_print: paged
+urlcolor: blue # cor do link no pdf
+# ver https://bookdown.org/yihui/rmarkdown/pdf-document.html (3.3.5, como integrar classe latex)
+---
+
+```{r setup, include=FALSE}
+#diretorio de trabalho
+
+
+#importação de bibliotecas
+# necessária para o include_graphics
+library(knitr)		# para formatar o markdown (tabelas)
+library(tidyverse)	# para manipulação de dados e gráficos
+library(kableExtra)	# para o kable_styling
+library("reshape2") 
+#library(png)		# para imagens em png nos gráficos. Fornece readPNG()
+#library(jpeg) - #fornece a readJPG()
+#library(grid)		# para a rasterGrob
+
+
+# opções globais para os chunks (ver https://yihui.org/knitr/options/)
+knitr::opts_chunk$set(
+  fig.align='center',# alinhamento das figuras
+  echo = FALSE,# código não será mostrado por padrão
+  fig.width = 9,# tamanho das figuras em todos os gráficos
+  fig.height = 4.5,
+  fig.align='center',# alinhamento das figuras
+  out.width = '70%',# reduz proporcionalmente (mantendo o aspect ratio de height e width)
+  cache = FALSE,# para deixar mais rápido deixar TRUE, mas ele cria uma pasta
+  warning = FALSE,# desliga avisos
+  message = FALSE,# desliga mensagens
+  fig.pos = "H",# O H do float do LaTeX
+  tab.pos = "H"# O H do float do LaTeX
+  # error=T faz com que não pare com erros
+)
+
+# evita notação científica no texto
+options(scipen=999)
+```
+
+# Sobre os Coporas
+
+## DanteStocks
+
+
+**Descrição:** corpus com tweets do mercado financeiro que foram anotados manualmente com informações morfológicas e morfosintaxicas
+
+**Onde encontrar o corpus:** [DanteStocks](https://sites.google.com/icmc.usp.br/poetisa/resources-and-tools?authuser=0)
+
+------------------------------------------------------------------------
+
+## DanteShots
+
+**Descrição:** corpus com tweets sobre a vacinação contra a COVID-19 que foram anotados automaticamente com informações morfológicas e morfosintaxicas
+
+**Onde encontrar o corpus:** [DanteShots](https://github.com/DANTE-POeTiSA/dante-corpora)
+
+------------------------------------------------------------------------
+
+## Porttinari-base
+
+**Descrição:** contém sentenças da Folha de S.Paulo que foram anotadas manualmente com informações morfológicas e morfosintaxicas
+
+**Onde encontrar o corpus:** [Porttinari-base](https://sites.google.com/icmc.usp.br/poetisa/resources-and-tools?authuser=0)
+
+------------------------------------------------------------------------
+
+## PetroGold
+
+**Descrição:** contém sentenças de artigos acadêmicos do domínio do petróleo
+
+**Onde encontrar o corpus:** [PetroGold](https://petroles.puc-rio.ai/index_en.html)
+
+\newpage
+
+# Dados Gerais dos Corpus
+
+```{r}
+# base de dados com rótulo de cada token
+stocks <- read.csv("../DanteStocks/tables/final_table.csv")
+shots <- read.csv("../DanteShots/tables/final_table.csv")
+portinari <- read.csv("../Porttinari-base/tables/final_table.csv")
+petro <- read.csv("../PetroGold/tables/final_table.csv")
+
+# frequencias
+freqGeralStocks <- stocks %>%
+  group_by(POS) %>%
+  summarize(freq=n())
+
+freqGeralShots <- shots %>%
+  group_by(POS) %>%
+  summarize(freq=n())
+
+freqGeralPort <- portinari %>%
+  group_by(POS) %>%
+  summarize(freq=n())
+
+freqGeralPetro <- petro %>%
+  group_by(POS) %>%
+  summarize(freq=n())
+
+#ordenando 
+freqGeralStocks <- freqGeralStocks %>% arrange(desc(freq)) 
+
+freqGeralShots <- data.frame("POS" = c("PUNCT", "NOUN", "PROPN",
+            "ADP", "DET", "VERB",
+            "NUM", "SYM","ADJ",
+            "ADV",
+            "X", "CCONJ", "AUX",
+            "PRON", "SCONJ",
+            "INTJ", "PART"),
+                 "freq" = c(freqGeralShots$freq[12], freqGeralShots$freq[8],
+                            freqGeralShots$freq[11], freqGeralShots$freq[2],
+                            freqGeralShots$freq[6],freqGeralShots$freq[15],
+                            freqGeralShots$freq[9],freqGeralShots$freq[14],
+                            freqGeralShots$freq[1],freqGeralShots$freq[3],
+                            freqGeralShots$freq[16],
+                            freqGeralShots$freq[5],freqGeralShots$freq[4],
+                            freqGeralShots$freq[10],freqGeralShots$freq[13],
+                            freqGeralShots$freq[7],0))
+
+freqGeralPort <- data.frame("POS" = c("PUNCT", "NOUN", "PROPN",
+            "ADP", "DET", "VERB",
+            "NUM", "SYM","ADJ",
+            "ADV",
+            "X", "CCONJ", "AUX",
+            "PRON", "SCONJ",
+            "INTJ", "PART"),
+                 "freq" = c(freqGeralPort$freq[12], freqGeralPort$freq[8],
+                            freqGeralPort$freq[11], freqGeralPort$freq[2],
+                            freqGeralPort$freq[6],freqGeralPort$freq[15],
+                            freqGeralPort$freq[9],freqGeralPort$freq[14],
+                            freqGeralPort$freq[1],freqGeralPort$freq[3],
+                            freqGeralPort$freq[16],
+                            freqGeralPort$freq[5],freqGeralPort$freq[4],
+                            freqGeralPort$freq[10],freqGeralPort$freq[13],
+                            freqGeralPort$freq[7],0))
+
+freqGeralPetro <- data.frame("POS" = c("PUNCT", "NOUN", "PROPN",
+            "ADP", "DET", "VERB",
+            "NUM", "SYM","ADJ",
+            "ADV",
+            "X", "CCONJ", "AUX",
+            "PRON", "SCONJ",
+            "INTJ", "PART"),
+                 "freq" = c(freqGeralPetro$freq[13], freqGeralPetro$freq[8],
+                            freqGeralPetro$freq[12], freqGeralPetro$freq[2],
+                            freqGeralPetro$freq[6],freqGeralPetro$freq[16],
+                            freqGeralPetro$freq[9],freqGeralPetro$freq[15],
+                            freqGeralPetro$freq[1],freqGeralPetro$freq[3],
+                            freqGeralPetro$freq[17],
+                            freqGeralPetro$freq[5],freqGeralPetro$freq[4],
+                            freqGeralPetro$freq[11],freqGeralPetro$freq[14],
+                            freqGeralPetro$freq[7],freqGeralPetro$freq[10]))
+
+# frequência absoluta de cada etiqueta em cada tweet/sentença
+freqTweetStocks <- stocks %>%
+  group_by(ID_DSTOCKS, POS) %>%
+  summarise(freq = n())
+
+freqTweetShots <- shots %>%
+  group_by(ID_DSHOTS, POS) %>%
+  summarise(freq = n())
+
+freqSentPort <- portinari %>%
+  group_by(ID_FOLHA, POS) %>%
+  summarise(freq = n())
+
+freqSentPetro <- petro %>%
+  group_by(ID_PETRO, POS) %>%
+  summarise(freq = n())
+
+
+# total de etiquetas por tweet/sentença (casa com o número de tokens do tweet/sentença)
+etiqTweetStocks <- stocks %>% 
+  group_by(ID_DSTOCKS) %>% 
+  summarize(freq=n())
+
+etiqTweetShots <- shots %>% 
+  group_by(ID_DSHOTS) %>% 
+  summarize(freq=n())
+
+etiqSentPort <- portinari %>% 
+  group_by(ID_FOLHA) %>% 
+  summarize(freq=n())
+
+etiqSentPetro <- petro %>% 
+  group_by(ID_PETRO) %>% 
+  summarize(freq=n())
+
+# total de etiquetas distintas por tweet/sentença
+etiqDistTweetStocks <- freqTweetStocks %>% 
+  group_by(ID_DSTOCKS) %>% 
+  summarize(freq=n())
+
+etiqDistTweetShots <- freqTweetShots %>% 
+  group_by(ID_DSHOTS) %>% 
+  summarize(freq=n())
+
+etiqDistSentPort <- freqSentPort %>% 
+  group_by(ID_FOLHA) %>% 
+  summarize(freq=n())
+
+etiqDistSentPetro <- freqSentPetro %>% 
+  group_by(ID_PETRO) %>% 
+  summarize(freq=n())
+```
+
+## Quantidade de Tweet ou Sentença
+
+| DanteStocks               | DanteShots               | Porttinari-base        | PetroGold               |
+|---------------------------|--------------------------|------------------------|-------------------------|
+| `r nrow(etiqTweetStocks)` | `r nrow(etiqTweetShots)` | `r nrow(etiqSentPort)` | `r nrow(etiqSentPetro)` |
+
+## Total de Etiquetas nos Corpus
+
+| DanteStocks                   | DanteShots                   | Porttinari-base            | PetroGold                   |
+|-------------------------------|------------------------------|----------------------------|-----------------------------|
+| `r sum(etiqTweetStocks$freq)` | `r sum(etiqTweetShots$freq)` | `r sum(etiqSentPort$freq)` | `r sum(etiqSentPetro$freq)` |
+
+## Etiquetas em um tweet ou numa sentença
+
+| Medida  | DanteStocks                      | DanteShots                      | Porttinari-base               | PetroGold                      |
+|---------|----------------------------------|---------------------------------|-------------------------------|--------------------------------|
+| Mínimo  | `r min(etiqTweetStocks$freq)`    | `r min(etiqTweetShots$freq)`    | `r min(etiqSentPort$freq)`    | `r min(etiqSentPetro$freq)`    |
+| Máximo  | `r max(etiqTweetStocks$freq)`    | `r max(etiqTweetShots$freq)`    | `r max(etiqSentPort$freq)`    | `r max(etiqSentPetro$freq)`    |
+| Média   | `r mean(etiqTweetStocks$freq)`   | `r mean(etiqTweetShots$freq)`   | `r mean(etiqSentPort$freq)`   | `r mean(etiqSentPetro$freq)`   |
+| Mediana | `r median(etiqTweetStocks$freq)` | `r median(etiqTweetShots$freq)` | `r median(etiqSentPort$freq)` | `r median(etiqSentPetro$freq)` |
+
+\newpage
+
+### Gráficos de Dispersão
+
+**DanteStocks:**
+
+```{r}
+# 
+# ggplot(etiqTweetDante, aes(x=freq)) +  geom_density(aes(y = ..count..), fill = "lightgray") +
+#   geom_vline(aes(xintercept = median(freq)), 
+#              linetype = "dashed", size = 0.6,
+#              color = "#FC4E07")
+```
+
+```{r histEtiqTweetDanteStocks}
+
+
+etiqTweetStocks %>%
+  ggplot(aes(x=freq)) + geom_histogram() + labs(x = "Quantidade de tweets", y = "Frequência")
+
+
+```
+
+**DanteShots:**
+
+```{r}
+# 
+# ggplot(etiqTweetDante, aes(x=freq)) +  geom_density(aes(y = ..count..), fill = "lightgray") +
+#   geom_vline(aes(xintercept = median(freq)), 
+#              linetype = "dashed", size = 0.6,
+#              color = "#FC4E07")
+```
+
+```{r histEtiqTweetDanteShots}
+etiqTweetShots %>%
+  ggplot(aes(x=freq)) + geom_histogram() + labs(x = "Quantidade de tweets", y = "Frequência")
+```
+
+**Porttinari-base:**
+
+```{r}
+# ggplot(etiqSentPort, aes(x=freq)) +  geom_density(aes(y = ..count..), fill = "lightgray") +
+#   geom_vline(aes(xintercept = median(freq)), 
+#              linetype = "dashed", size = 0.6,
+#              color = "#FC4E07")
+```
+
+```{r histEtiqSentPort}
+etiqSentPort %>%
+  ggplot(aes(x=freq)) + geom_histogram() + labs(x = "Quantidade de tweets", y = "Frequência")
+```
+
+**PetroGold:**
+
+```{r}
+# ggplot(etiqSentPetro, aes(x=freq)) +  geom_density(aes(y = ..count..), fill = "lightgray") +
+#   geom_vline(aes(xintercept = median(freq)), 
+#              linetype = "dashed", size = 0.6,
+#              color = "#FC4E07")
+```
+
+```{r histEtiqSentPetro}
+etiqSentPetro %>%
+  ggplot(aes(x=freq)) + geom_histogram() + labs(x = "Quantidade de tweets", y = "Frequência")
+```
+
+\newpage
+
+## Etiquetas Distintas em um Tweet ou Sentença
+
+| Medida  | DanteStocks                          | DanteStocks                       | Porttinari-base                 | PetroGold                        |
+|---------|--------------------------------------|-----------------------------------|---------------------------------|----------------------------------|
+| Mínimo  | `r min(etiqDistTweetStocks$freq)`    | `r min(etiqDistTweetShots$freq)`  | `r min(etiqDistSentPort$freq)`  | `r min(etiqDistSentPetro$freq)`  |
+| Máximo  | `r max(etiqDistTweetStocks$freq)`    | `r max(etiqDistTweetShots$freq)`  |`r max(etiqDistSentPort$freq)`   | `r max(etiqDistSentPetro$freq)`  |
+| Média   | `r mean(etiqDistTweetStocks$freq)`   | `r mean(etiqDistTweetShots$freq)` | `r mean(etiqDistSentPort$freq)` | `r mean(etiqDistSentPetro$freq)` |
+| Mediana |`r median(etiqDistTweetStocks$freq)`  |`r median(etiqDistTweetShots$freq)`|`r median(etiqDistSentPort$freq)`| `r median(etiqDistSentPetro$freq)` |
+
+
+
+### Gráficos de Dispersão
+
+**DanteStocks:**
+
+```{r}
+# ggplot(etiqDistTweet, aes(x=freq)) +  geom_density(aes(y = ..count..), fill = "lightgray") +
+#   geom_vline(aes(xintercept = median(freq)), 
+#              linetype = "dashed", size = 0.6,
+#              color = "#FC4E07")
+```
+
+```{r histEtiqDistTweetStocks}
+etiqDistTweetStocks %>%
+  ggplot(aes(x=freq)) + geom_histogram(bins=10) + labs(x = "Quantidade de etiquetas distintas em um tweet", y = "Frequência")
+```
+
+**DanteShots:**
+
+```{r}
+# ggplot(etiqDistTweet, aes(x=freq)) +  geom_density(aes(y = ..count..), fill = "lightgray") +
+#   geom_vline(aes(xintercept = median(freq)), 
+#              linetype = "dashed", size = 0.6,
+#              color = "#FC4E07")
+```
+
+```{r histEtiqDistTweetShots}
+etiqDistTweetShots %>%
+  ggplot(aes(x=freq)) + geom_histogram(bins=10) + labs(x = "Quantidade de etiquetas distintas em um tweet", y = "Frequência")
+```
+
+**Porttinari-base:**
+
+```{r}
+# ggplot(etiqDistSentPort, aes(x=freq)) +  geom_density(aes(y = ..count..), fill = "lightgray") +
+#   geom_vline(aes(xintercept = median(freq)), 
+#              linetype = "dashed", size = 0.6,
+#              color = "#FC4E07")
+```
+
+```{r histEtiqDistSentPort}
+etiqDistSentPort %>%
+  ggplot(aes(x=freq)) + geom_histogram(bins=10) + labs(x = "Quantidade de etiquetas distintas em uma sentença", y = "Frequência")
+```
+
+**PetroGold:**
+
+```{r}
+# ggplot(etiqDistSentPetro, aes(x=freq)) +  geom_density(aes(y = ..count..), fill = "lightgray") +
+#   geom_vline(aes(xintercept = median(freq)), 
+#              linetype = "dashed", size = 0.6,
+#              color = "#FC4E07")
+```
+
+```{r histEtiqDistSentPetro}
+etiqDistSentPetro %>%
+  ggplot(aes(x=freq)) + geom_histogram(bins=10) + labs(x = "Quantidade de etiquetas distintas em uma sentença", y = "Frequência")
+```
+\newpage
+
+## Qual a etiqueta mais frequente?
+
+```{r}
+freqDecrStocks <- freqGeralStocks[order(freqGeralStocks$freq, decreasing = TRUE),]
+
+freqDecrShots <- freqGeralShots[order(freqGeralShots$freq, decreasing = TRUE),]
+
+freqDecrPort <- freqGeralPort[order(freqGeralPort$freq, decreasing = TRUE),]
+
+freqDecrPetro <- freqGeralPetro[order(freqGeralPetro$freq, decreasing = TRUE),]
+```
+
+No DanteStocks, A etiqueta mais frequente é `r freqDecrStocks$POS[1]` (com `r freqDecrStocks$freq[1]` tags no corpus), seguida de `r freqDecrStocks$POS[2]` (`r freqDecrStocks$freq[2]` tags no corpus) e `r freqDecrStocks$POS[3]` (`r freqDecrStocks$freq[3]` tags no corpus).
+
+No DanteShots, A etiqueta mais frequente é `r freqDecrShots$POS[1]` (com `r freqDecrShots$freq[1]` tags no corpus), seguida de `r freqDecrShots$POS[2]` (`r freqDecrShots$freq[2]` tags no corpus) e `r freqDecrShots$POS[3]` (`r freqDecrShots$freq[3]` tags no corpus).
+
+No Portinari, a etiqueta mais frequente é `r freqDecrPort$POS[1]` (com `r freqDecrPort$freq[1]` tags no corpus), seguida de `r freqDecrPort$POS[2]` (`r freqDecrPort$freq[2]` tags no corpus) e `r freqDecrPort$POS[3]` (`r freqDecrPort$freq[3]` tags no corpus).
+
+No PetroGold, a etiqueta mais frequente é `r freqDecrPetro$POS[1]` (com `r freqDecrPetro$freq[1]` tags no corpus), seguida de `r freqDecrPetro$POS[2]` (`r freqDecrPetro$freq[2]` tags no corpus) e `r freqDecrPetro$POS[3]` (`r freqDecrPetro$freq[3]` tags no corpus).
+
+## Qual a etiqueta menos frequente?
+
+No outro extremo, em DanteStocks, temos `r tail(freqDecrStocks,1)$POS` como a etiqueta menos frequente (com `r tail(freqDecrStocks,1)$freq` tags no corpus), seguida de `r tail(freqDecrStocks,2)$POS[1]` (`r tail(freqDecrStocks,2)$freq[1]` tags no corpus) e `r tail(freqDecrStocks,3)$POS[1]` (`r tail(freqDecrStocks,3)$freq[1]` tags no corpus).
+
+No DanteShots, temos `r tail(freqDecrShots,1)$POS` como a etiqueta menos frequente (com `r tail(freqDecrShots,1)$freq` tags no corpus), seguida de `r tail(freqDecrShots,2)$POS[1]` (`r tail(freqDecrShots,2)$freq[1]` tags no corpus) e `r tail(freqDecrShots,3)$POS[1]` (`r tail(freqDecrShots,3)$freq[1]` tags no corpus).
+
+No Portinari, temos `r tail(freqDecrPort,1)$POS` como a etiqueta menos frequente (com `r tail(freqDecrPort,1)$freq` tags no corpus), seguida de `r tail(freqDecrPort,2)$POS[1]` (`r tail(freqDecrPort,2)$freq[1]` tags no corpus) e `r tail(freqDecrPort,3)$POS[1]` (`r tail(freqDecrPort,3)$freq[1]` tags no corpus).
+
+No PetroGold, temos `r tail(freqDecrPetro,1)$POS` como a etiqueta menos frequente (com `r tail(freqDecrPetro,1)$freq` tags no corpus), seguida de `r tail(freqDecrPetro,2)$POS[1]` (`r tail(freqDecrPetro,2)$freq[1]` tags no corpus) e `r tail(freqDecrPetro,3)$POS[1]` (`r tail(freqDecrPetro,3)$freq[1]` tags no corpus).
+
+## Quantas etiquetas diferentes há no corpus?
+
+```{r}
+#DanteStocks
+#Subset excluindo as tags com freq = 0
+tagsPresentesStocks <- freqDecrStocks %>%
+  filter(freq>0)
+#Subset com as tags faltantes, ou seja, freq = 0
+tagsFaltantesStocks <- freqDecrStocks %>% 
+  filter(freq < 1)
+
+#DanteShots
+#Subset excluindo as tags com freq = 0
+tagsPresentesShots <- freqDecrShots %>%
+  filter(freq>0)
+#Subset com as tags faltantes, ou seja, freq = 0
+tagsFaltantesShots <- freqDecrShots %>% 
+  filter(freq < 1)
+
+#Portinari
+#Subset excluindo as tags com freq = 0
+tagsPresentesPort <- freqDecrPort %>%
+  filter(freq>0)
+#Subset com as tags faltantes, ou seja, freq = 0
+tagsFaltantesPort <- freqDecrPort %>% 
+  filter(freq < 1)
+
+#PetroGold
+#Subset excluindo as tags com freq = 0
+tagsPresentesPetro <- freqDecrPetro %>%
+  filter(freq>0)
+#Subset com as tags faltantes, ou seja, freq = 0
+tagsFaltantesPetro <- freqDecrPetro %>% 
+  filter(freq < 1)
+```
+
+De acordo com [UD v2](https://universaldependencies.org/u/pos/) temos o total de 17 etiquetas na UD. Dessa forma, temos que:
+
+-   No DanteStocks, há um total de `r nrow(tagsPresentesStocks)` aparecem no corpus. Estas são (em ordem decrescente de frequência no corpus): `r tagsPresentesStocks$POS`. As etiquetas faltantes são: `r tagsFaltantesStocks$POS`
+
+-   No DanteShots, há um total de `r nrow(tagsPresentesShots)` aparecem no corpus. Estas são (em ordem decrescente de frequência no corpus): `r tagsPresentesShots$POS`. As etiquetas faltantes são: `r tagsFaltantesShots$POS`
+
+-   No Portinari, há um total de `r nrow(tagsPresentesPort)` aparecem no corpus. Estas são (em ordem decrescente de frequência no corpus): `r tagsPresentesPort$POS`. As etiquetas faltantes são: `r tagsFaltantesPort$POS`
+
+-   No PetroGold, há um total de `r nrow(tagsPresentesPetro)` aparecem no corpus. Estas são (em ordem decrescente de frequência no corpus): `r tagsPresentesPetro$POS`. As etiquetas faltantes são: `r tagsFaltantesPetro$POS`
+
+\newpage
+
+# Distribuição Geral das Etiquetas PoS
+
+## Frequencia Absoluta
+
+Frequência absoluta de etiquetas em gráficos separados, com as etiquetas seguindo a ordem decrescente de frequência do DanteStocks:
+
+```{r}
+#criando o df com os residuos
+freqGeral <- data.frame(PoS = freqGeralStocks$POS, DanteStocks = freqGeralStocks$freq, DanteShots = freqGeralShots$freq, PorttinariBase = freqGeralPort$freq , PetroGold= freqGeralPetro$freq)
+
+```
+
+```{r barraFreqGeral}
+# Histograma Geral DanteStocks
+freqGeralStocks %>%
+  ggplot(aes(x = reorder(POS, -freq), y = freq)) +
+    geom_col() +
+    theme(axis.text.x=element_text(angle=45, hjust=1)) +
+    geom_text(aes(label = freq), vjust = -0.5, size=3) +
+    labs(x = "etiquetas PoS", y = "número de ocorrências")
+    # coord_flip()
+
+# Histograma Geral DanteShots
+freqGeralShots %>%
+  ggplot(aes(x = fct_relevel(POS, c("PUNCT", "NOUN", "PROPN",
+            "ADP", "DET", "VERB",
+            "NUM", "SYM","ADJ",
+            "ADV",
+            "X", "CCONJ", "AUX",
+            "PRON", "SCONJ",
+            "INTJ", "PART")), y = freq)) +
+  geom_col() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(aes(label = freq), vjust = -0.5, size=3) +
+  labs(x = "etiquetas PoS", y = "número de ocorrências")
+  # coord_flip()
+
+# Histograma Geral Portinari
+freqGeralPort %>%
+  ggplot(aes(x = fct_relevel(POS, c("PUNCT", "NOUN", "PROPN",
+            "ADP", "DET", "VERB",
+            "NUM", "SYM","ADJ",
+            "ADV",
+            "X", "CCONJ", "AUX",
+            "PRON", "SCONJ",
+            "INTJ", "PART")), y = freq)) +
+  geom_col() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(aes(label = freq), vjust = -0.5, size=3) +
+  labs(x = "etiquetas PoS", y = "número de ocorrências")
+  # coord_flip()
+
+# Histograma Geral Petro
+freqGeralPetro %>%
+  ggplot(aes(x = fct_relevel(POS, c("PUNCT", "NOUN", "PROPN",
+            "ADP", "DET", "VERB",
+            "NUM", "SYM","ADJ",
+            "ADV",
+            "X", "CCONJ", "AUX",
+            "PRON", "SCONJ",
+            "INTJ", "PART")), y = freq)) +
+  geom_col() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(aes(label = freq), vjust = -0.5, size=3) +
+  labs(x = "etiquetas PoS", y = "número de ocorrências")
+  # coord_flip()
+```
+
+
+
+### Grafico com todas as distribuições:
+
+```{r barraFreqGeralJunto}
+data_long <- melt(freqGeral, id = "PoS")
+ggplot(data = data_long, aes(x = fct_relevel(PoS, c("PUNCT", "NOUN", "PROPN",
+            "ADP", "DET", "VERB",
+            "NUM", "SYM","ADJ",
+            "ADV",
+            "X", "CCONJ", "AUX",
+            "PRON", "SCONJ",
+            "INTJ", "PART")), y = value, fill = variable)) + 
+       geom_bar(stat = 'identity', position = 'dodge') +
+  labs(x = "etiquetas PoS", y = "número de ocorrências")
+```
+\newpage
+
+## Frequencia Relativa
+
+Como os corpora tem tamanhos diferentes, a imagem acima fica um pouco dificil de visualizar. Então vamos plotar em porcentagem:
+
+```{r}
+freqGeralRelativa <- data.frame(PoS = freqGeralStocks$POS, DanteStocks = freqGeralStocks$freq/sum(freqGeralStocks$freq), DanteShots = freqGeralShots$freq/sum(freqGeralShots$freq), PorttinariBase = freqGeralPort$freq/sum(freqGeralPort$freq) , PetroGold= freqGeralPetro$freq/sum(freqGeralPetro$freq))
+
+freqGeralRelativa
+```
+
+\newpage
+
+### Separado
+
+```{r barraFreqGeralRltv}
+#DanteStocks
+freqGeralRelativa %>%
+  ggplot(aes(x = fct_relevel(PoS, c("PUNCT", "NOUN", "PROPN",
+            "ADP", "DET", "VERB",
+            "NUM", "SYM","ADJ",
+            "ADV",
+            "X", "CCONJ", "AUX",
+            "PRON", "SCONJ",
+            "INTJ", "PART")), y = DanteStocks)) +
+  geom_col() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(aes(label = format(round(DanteStocks,4), nsmall = 5)), vjust = -0.5, size=3) +
+  labs(x = "etiquetas PoS", y = "% de ocorrências")
+
+#DanteShots
+freqGeralRelativa %>%
+  ggplot(aes(x = fct_relevel(PoS, c("PUNCT", "NOUN", "PROPN",
+            "ADP", "DET", "VERB",
+            "NUM", "SYM","ADJ",
+            "ADV",
+            "X", "CCONJ", "AUX",
+            "PRON", "SCONJ",
+            "INTJ", "PART")), y = DanteShots)) +
+  geom_col() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(aes(label = format(round(DanteShots,4), nsmall = 5)), vjust = -0.5, size=3) +
+  labs(x = "etiquetas PoS", y = "% de ocorrências")
+
+#Porttinari
+freqGeralRelativa %>%
+  ggplot(aes(x = fct_relevel(PoS, c("PUNCT", "NOUN", "PROPN",
+            "ADP", "DET", "VERB",
+            "NUM", "SYM","ADJ",
+            "ADV",
+            "X", "CCONJ", "AUX",
+            "PRON", "SCONJ",
+            "INTJ", "PART")), y = PorttinariBase)) +
+  geom_col() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(aes(label = format(round(PorttinariBase,4), nsmall = 4)), vjust = -0.5, size=3) +
+  labs(x = "etiquetas PoS", y = "% de ocorrências")
+
+#PetroGold
+freqGeralRelativa %>%
+  ggplot(aes(x = fct_relevel(PoS, c("PUNCT", "NOUN", "PROPN",
+            "ADP", "DET", "VERB",
+            "NUM", "SYM","ADJ",
+            "ADV",
+            "X", "CCONJ", "AUX",
+            "PRON", "SCONJ",
+            "INTJ", "PART")), y = PetroGold)) +
+  geom_col() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(aes(label = format(round(PetroGold,4), nsmall = 5)), vjust = -0.5, size=3) +
+  labs(x = "etiquetas PoS", y = "% de ocorrências")
+```
+
+**Junto:**
+
+```{r barraFreqGeralRltJunto}
+data_long <- melt(freqGeralRelativa, id = "PoS")
+ggplot(data = data_long, aes(x = fct_relevel(PoS, c("PUNCT", "NOUN", "PROPN",
+            "ADP", "DET", "VERB",
+            "NUM", "SYM","ADJ",
+            "ADV",
+            "X", "CCONJ", "AUX",
+            "PRON", "SCONJ",
+            "INTJ", "PART")), y = value, fill = variable)) + 
+       geom_bar(stat = 'identity', position = 'dodge') +
+  labs(x = "etiquetas PoS", y = "% das ocorrências")
+```
+
+\newpage
+
+# Distribuição de Etiquetas Conforme sua Frequência em Tweets/Sentences em que Ocorrem
+
+O gráfico abaixo ilustra o número mínimo, máximo, bem como quartis, de vezes que cada etiqueta ocorre por tweet, considerando apenas os tweets em que ela ocorre:
+
+```{r boxplot, fig.width = 7, fig.height = 5.5}
+#DanteStocks
+boxesStocks <- ggplot(data = freqTweetStocks, mapping = aes(x = fct_relevel(POS, c("ADJ", "ADP", "ADV",
+            "AUX", "CCONJ", "DET",
+            "INTJ", "NOUN","NUM",
+            "PART", "PRON", "PROPN",
+            "PUNCT", "SCONJ",
+            "SYM", "VERB", "X")), y = freq)) +
+  geom_boxplot() +
+  labs(x = "etiquetas PoS", y = "número de etiquetas") +
+  coord_flip() + 
+  scale_y_continuous(limits=c(0,35), breaks=seq(0,100,10), expand = c(0, 0))
+
+tabelaBoxesStocks <- layer_data(boxesStocks)[c(1:5)]
+
+#DanteShots
+boxesShots <- ggplot(data = freqTweetShots, mapping = aes(x = fct_relevel(POS, c("ADJ", "ADP", "ADV",
+            "AUX", "CCONJ", "DET",
+            "INTJ", "NOUN","NUM",
+            "PART", "PRON", "PROPN",
+            "PUNCT", "SCONJ",
+            "SYM", "VERB", "X")), y = freq)) +
+  geom_boxplot() +
+  labs(x = "etiquetas PoS", y = "número de etiquetas") +
+  coord_flip() + 
+  scale_y_continuous(limits=c(0,35), breaks=seq(0,100,10), expand = c(0, 0))
+
+tabelaBoxesShots <- layer_data(boxesShots)[c(1:5)]
+
+#Porttinari-base
+boxesPort <- ggplot(data = freqSentPort, mapping = aes(x = fct_relevel(POS, c("ADJ", "ADP", "ADV",
+            "AUX", "CCONJ", "DET",
+            "INTJ", "NOUN","NUM",
+            "PART", "PRON", "PROPN",
+            "PUNCT", "SCONJ",
+            "SYM", "VERB", "X")), y = freq)) +
+  geom_boxplot() +
+  labs(x = "etiquetas PoS", y = "número de etiquetas") +
+  coord_flip() +
+  # coord_cartesian(ylim = c(0, 30)) +
+  scale_y_continuous(limits=c(0,35), breaks=seq(0,100,10), expand = c(0, 0))
+
+tabelaBoxesPort <- layer_data(boxesPort)[c(1:5)]
+
+#PetroGold
+boxesPetro <- ggplot(data = freqSentPetro, mapping = aes(x = fct_relevel(POS, c("ADJ", "ADP", "ADV",
+            "AUX", "CCONJ", "DET",
+            "INTJ", "NOUN","NUM",
+            "PART", "PRON", "PROPN",
+            "PUNCT", "SCONJ",
+            "SYM", "VERB", "X")), y = freq)) +
+  geom_boxplot() +
+  labs(x = "etiquetas PoS", y = "número de etiquetas") +
+  coord_flip() +
+  # + coord_cartesian(ylim = c(0, 30)) +
+  scale_y_continuous(limits=c(0,95), breaks=seq(0,100,10), expand = c(0, 0))
+  
+
+boxesStocks
+boxesShots
+boxesPort
+boxesPetro
+```
+
+\newpage
+
+# Abrangência de cada etiqueta
+
+## Frequência Absoluta
+
+Quantos tweets ou sentenças possuem certa tag:
+
+```{r}
+# número de tweets diferentes em que cada etiqueta ocorre
+distrTweetStocks <- read.csv("../DanteStocks/tables/table_freq_tweet.csv")
+
+#adaptando a tabela para plotar o gráfico
+distrTweetStocksRltv <- data.frame(PoS = c("PROPN", "NOUN", "PUNCT",
+            "ADP", "VERB", "DET",
+            "SYM", "NUM","ADJ",
+            "ADV", "X", "CCONJ",
+            "AUX", "PRON", "SCONJ","INTJ", "PART"),
+                         tweets = c(distrTweetStocks$PROPN,distrTweetStocks$NOUN,distrTweetStocks$PUNCT,
+                                    distrTweetStocks$ADP,distrTweetStocks$VERB,distrTweetStocks$DET,
+                                    distrTweetStocks$SYM,distrTweetStocks$NUM,distrTweetStocks$ADJ,
+                                    distrTweetStocks$ADV,distrTweetStocks$X,distrTweetStocks$CCONJ,
+                                    distrTweetStocks$AUX,distrTweetStocks$PRON,distrTweetStocks$SCONJ,
+                                    distrTweetStocks$INTJ,distrTweetStocks$PART))
+
+# Abrangência de cada tag em relação ao total de tweets (frequência de ococrrência)
+distrTweetStocksRltv$freq <- distrTweetStocksRltv$tweets / nrow(etiqTweetStocks)
+```
+
+```{r}
+# número de tweets diferentes em que cada etiqueta ocorre
+distrTweetShots <- read.csv("../DanteShots/tables/table_freq_tweet.csv")
+
+#adaptando a tabela para plotar o gráfico
+distrTweetShotsRltv <- data.frame(PoS = c("PROPN", "NOUN", "PUNCT",
+            "ADP", "VERB", "DET",
+            "SYM", "NUM","ADJ",
+            "ADV", "X", "CCONJ",
+            "AUX", "PRON", "SCONJ","INTJ", "PART"),
+                         tweets = c(distrTweetShots$PROPN,distrTweetShots$NOUN,distrTweetShots$PUNCT,
+                                    distrTweetShots$ADP,distrTweetShots$VERB,distrTweetShots$DET,
+                                    distrTweetShots$SYM,distrTweetShots$NUM,distrTweetShots$ADJ,
+                                    distrTweetShots$ADV,distrTweetShots$X,distrTweetShots$CCONJ,
+                                    distrTweetShots$AUX,distrTweetShots$PRON,distrTweetShots$SCONJ,
+                                    distrTweetShots$INTJ,distrTweetShots$PART))
+
+# Abrangência de cada tag em relação ao total de tweets (frequência de ococrrência)
+distrTweetShotsRltv$freq <- distrTweetShotsRltv$tweets / nrow(etiqTweetShots)
+```
+
+```{r}
+# número de sentenças diferentes em que cada etiqueta ocorre
+distrSentPort <- read.csv("../Porttinari-base/tables/table_freq_tweet.csv")
+
+#adaptando a tabela para plotar o gráfico
+# não foi colocado PART pois não existe no corpus
+distrSentRltvPort <- data.frame(PoS = c("PROPN", "NOUN", "PUNCT",
+            "ADP", "VERB", "DET",
+            "SYM", "NUM","ADJ",
+            "ADV", "X", "CCONJ",
+            "AUX", "PRON", "SCONJ","INTJ", "PART"),
+                         sentences = c(distrSentPort$PROPN,distrSentPort$NOUN,distrSentPort$PUNCT,
+                                    distrSentPort$ADP,distrSentPort$VERB,distrSentPort$DET,
+                                    distrSentPort$SYM,distrSentPort$NUM,distrSentPort$ADJ,
+                                    distrSentPort$ADV,distrSentPort$X,distrSentPort$CCONJ,
+                                    distrSentPort$AUX,distrSentPort$PRON,distrSentPort$SCONJ,
+                                    distrSentPort$INTJ,distrSentPort$PART))
+
+# Agbrangência de cada tag em relação ao total de tweets (frequência de ococrrência)
+distrSentRltvPort$freq <- distrSentRltvPort$sentences / nrow(etiqSentPort)
+```
+
+```{r}
+# número de sentenças diferentes em que cada etiqueta ocorre
+distrSentPetro <- read.csv("../PetroGold/tables/table_freq_tweet.csv")
+
+#adaptando a tabela para plotar o gráfico
+# não foi colocado PART pois não existe no corpus
+distrSentRltvPetro <- data.frame(PoS = c("PROPN", "NOUN", "PUNCT",
+            "ADP", "VERB", "DET",
+            "SYM", "NUM","ADJ",
+            "ADV", "X", "CCONJ",
+            "AUX", "PRON", "SCONJ","INTJ", "PART"),
+                         sentences = c(distrSentPetro$PROPN,distrSentPetro$NOUN,distrSentPetro$PUNCT,
+                                    distrSentPetro$ADP,distrSentPetro$VERB,distrSentPetro$DET,
+                                    distrSentPetro$SYM,distrSentPetro$NUM,distrSentPetro$ADJ,
+                                    distrSentPetro$ADV,distrSentPetro$X,distrSentPetro$CCONJ,
+                                    distrSentPetro$AUX,distrSentPetro$PRON,distrSentPetro$SCONJ,
+                                    distrSentPetro$INTJ,distrSentPetro$PART))
+
+# Agbrangência de cada tag em relação ao total de tweets (frequência de ococrrência)
+distrSentRltvPetro$freq <- distrSentRltvPetro$sentences / nrow(etiqSentPetro)
+```
+
+```{r}
+distST <- data.frame(PoS = distrTweetStocksRltv$PoS, DanteStocks = distrTweetStocksRltv$tweets, DanteShots = distrTweetShotsRltv$tweets, PorttinariBase = distrSentRltvPort$sentences , PetroGold= distrSentRltvPetro$sentences)
+
+distST
+```
+\newpage
+
+**Separado:**
+
+```{r ditrSenteceTweet}
+#DanteStocks
+ggplot(data = distrTweetStocksRltv, mapping = aes(x = fct_relevel(PoS, c("PROPN", "NOUN", "PUNCT",
+            "ADP", "VERB", "DET",
+            "SYM", "NUM","ADJ",
+            "ADV", "X", "CCONJ",
+            "AUX", 
+            "PRON", "SCONJ", "INTJ", "PART")), y = tweets)) +
+  geom_col() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(aes(label = tweets), vjust = -0.5, size=3) +
+  labs(x = "etiquetas PoS", y = "número de tweets")
+
+#DanteShots
+ggplot(data = distrTweetShotsRltv, mapping = aes(x = fct_relevel(PoS, c("PROPN", "NOUN", "PUNCT",
+            "ADP", "VERB", "DET",
+            "SYM", "NUM","ADJ",
+            "ADV", "X", "CCONJ",
+            "AUX", 
+            "PRON", "SCONJ", "INTJ", "PART")), y = tweets)) +
+  geom_col() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(aes(label = tweets), vjust = -0.5, size=3) +
+  labs(x = "etiquetas PoS", y = "número de tweets")
+
+#Porttinari-base
+ggplot(data = distrSentRltvPort, mapping = aes(x = fct_relevel(PoS, c("PROPN", "NOUN", "PUNCT",
+            "ADP", "VERB", "DET",
+            "SYM", "NUM","ADJ",
+            "ADV", "X", "CCONJ",
+            "AUX", "PRON", "SCONJ",
+            "INTJ", "PART")), y = sentences)) +
+  geom_col() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(aes(label = sentences), vjust = -0.5, size=3) +
+  labs(x = "etiquetas PoS", y = "número de sentenças")
+
+#PetroGold
+ggplot(data = distrSentRltvPetro, mapping = aes(x = fct_relevel(PoS, c("PROPN", "NOUN", "PUNCT",
+            "ADP", "VERB", "DET",
+            "SYM", "NUM","ADJ",
+            "ADV", "X", "CCONJ",
+            "AUX", "PRON", "SCONJ","INTJ", "PART")), y = sentences)) +
+  geom_col() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(aes(label = sentences), vjust = -0.5, size=3) +
+  labs(x = "etiquetas PoS", y = "número de sentenças")
+
+
+```
+
+**Junto:**
+
+```{r ditrSenteceTweetJunto}
+data_long <- melt(distST, id = "PoS")
+ggplot(data = data_long, aes(x = fct_relevel(PoS, c("PUNCT", "NOUN", "PROPN",
+            "ADP", "DET", "VERB",
+            "NUM", "SYM","ADJ",
+            "ADV",
+            "X", "CCONJ", "AUX",
+            "PRON", "SCONJ",
+            "INTJ", "PART")), y = value, fill = variable)) + 
+       geom_bar(stat = 'identity', position = 'dodge') +
+  labs(x = "etiquetas PoS", y = "número de ocorrências")
+```
+\newpage
+
+## Frequência Relativa
+
+```{r}
+distSTRltv <- data.frame(PoS = distrTweetStocksRltv$PoS, DanteStocks = distrTweetStocksRltv$freq, DanteShots = distrTweetShotsRltv$freq, PorttinariBase = distrSentRltvPort$freq , PetroGold= distrSentRltvPetro$freq)
+
+distSTRltv
+```
+
+**Separado:**
+
+```{r ditrSenteceTweetRltv}
+#DanteStocks
+ggplot(data = distSTRltv, mapping = aes(x = fct_relevel(PoS, c("PROPN", "NOUN", "PUNCT",
+            "ADP", "VERB", "DET",
+            "SYM", "NUM","ADJ",
+            "ADV", "X", "CCONJ",
+            "AUX", 
+            "PRON", "SCONJ", "INTJ", "PART")), y = distSTRltv$DanteStocks)) +
+  geom_col() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(aes(label = format(round(distSTRltv$DanteStocks,4), nsmall = 4)), vjust = -0.5, size=3) +
+  labs(x = "etiquetas PoS", y = "% dos tweets")
+
+#DanteShots
+ggplot(data = distSTRltv, mapping = aes(x = fct_relevel(PoS, c("PROPN", "NOUN", "PUNCT",
+            "ADP", "VERB", "DET",
+            "SYM", "NUM","ADJ",
+            "ADV", "X", "CCONJ",
+            "AUX", 
+            "PRON", "SCONJ", "INTJ", "PART")), y = distSTRltv$DanteShots)) +
+  geom_col() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(aes(label = format(round(distSTRltv$DanteShots,4), nsmall = 4)), vjust = -0.5, size=3) +
+  labs(x = "etiquetas PoS", y = "% dos tweets")
+
+#Porttinari-base
+ggplot(data = distSTRltv, mapping = aes(x = fct_relevel(PoS, c("PROPN", "NOUN", "PUNCT",
+            "ADP", "VERB", "DET",
+            "SYM", "NUM","ADJ",
+            "ADV", "X", "CCONJ",
+            "AUX", "PRON", "SCONJ",
+            "INTJ", "PART")), y = distSTRltv$PorttinariBase)) +
+  geom_col() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(aes(label = format(round(distSTRltv$PorttinariBase,3), nsmall = 3)), vjust = -0.5, size=3) +
+  labs(x = "etiquetas PoS", y = "% das sentenças")
+
+#PetroGold
+ggplot(data = distSTRltv, mapping = aes(x = fct_relevel(PoS, c("PROPN", "NOUN", "PUNCT",
+            "ADP", "VERB", "DET",
+            "SYM", "NUM","ADJ",
+            "ADV", "X", "CCONJ",
+            "AUX", "PRON", "SCONJ","INTJ", "PART")), y = distSTRltv$PetroGold)) +
+  geom_col() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  geom_text(aes(label = format(round(distSTRltv$PetroGold,4), nsmall = 4)), vjust = -0.5, size=3) +
+  labs(x = "etiquetas PoS", y = "% das sentenças")
+```
+
+**Junto:**
+
+```{r ditrSenteceTweetRltvJunto}
+data_long <- melt(distSTRltv, id = "PoS")
+ggplot(data = data_long, aes(x = fct_relevel(PoS, c("PUNCT", "NOUN", "PROPN",
+            "ADP", "DET", "VERB",
+            "NUM", "SYM","ADJ",
+            "ADV",
+            "X", "CCONJ", "AUX",
+            "PRON", "SCONJ",
+            "INTJ", "PART")), y = value, fill = variable)) + 
+       geom_bar(stat = 'identity', position = 'dodge') +
+  labs(x = "etiquetas PoS", y = "% dos tweets ou sentenças")
+```
